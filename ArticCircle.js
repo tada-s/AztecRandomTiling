@@ -53,7 +53,35 @@ function fill(i, j){
 
 // Deletes the pairs of dominos with opposite directions (will collide).
 function deleteDominos(){
-	var i = 0;
+	// O(n log n)
+	dominos.sort(function(a, b){
+		if(a.x != b.x) return a.x - b.x;
+		else return a.y - b.y;
+	});
+	for(var i = 0; i < dominos.length - 1; i++){
+		var domino1 = dominos[i];
+		var domino2 = dominos[i + 1];
+		if(domino1.direction == DIRECTION_NORTH && domino2.direction == DIRECTION_SOUTH && domino1.x == domino2.x && domino1.y + 1 == domino2.y){
+			dominos.splice(i, 2);
+			i--;
+		}
+	}
+	
+	dominos.sort(function(a, b){
+		if(a.y != b.y) return a.y - b.y;
+		else return a.x - b.x;
+	});
+	for(var i = 0; i < dominos.length - 1; i++){
+		var domino1 = dominos[i];
+		var domino2 = dominos[i + 1];
+		if(domino1.direction == DIRECTION_EAST && domino2.direction == DIRECTION_WEST && domino1.x + 1 == domino2.x && domino1.y == domino2.y){
+			dominos.splice(i, 2);
+			i--;
+		}
+	}
+	
+	// O(n^2)
+	/*var i = 0;
 	while(i < dominos.length){
 		var deleted = false;
 		for(var j = i + 1; j < dominos.length; j++){
@@ -76,7 +104,7 @@ function deleteDominos(){
 		if(!deleted){
 			i++;
 		}
-	}
+	}*/
 	draw();
 }
 
@@ -107,7 +135,7 @@ function slideDominos(){
 function createDominos(){
 	iterationCounter++;
 
-	// More faster O(n^2)
+	// O(n^2)
 	// Initialize isEmpty
 	var isEmpty = [];
 	for(var x = 0; x <= 2 * iterationCounter + 2; x++){
@@ -155,7 +183,7 @@ function createDominos(){
 		}
 	}
 
-	// More slower O(n^3)
+	// O(n^3)
 	/*
 	// For each position in Aztec Diamond,
 	for(var x = -iterationCounter; x <= iterationCounter + 1; x++){
