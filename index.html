@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script src="ArticCircle.js"></script>
+		<script src="draw.js"></script>
+		<style>
+			body{
+				font-family: "Arial";
+			}
+			table{
+				border: 1px solid black;
+				border-collapse: collapse;
+				text-align: center;
+			}
+			table th {
+				border-left: 1px solid black;
+			}
+			table td {
+				border-left: 1px solid black;
+			}
+			canvas{
+				border: 1px solid black;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>Artic Circle</h1>
+		<table width=800px>
+			<tr>
+				<th>Seed</th>
+				<th>Iteration</th>
+				<th>Render Option</th>
+			</tr>
+			<tr>
+				<td>
+					<button type="button" onclick="init()">Set a seed</button>
+				</td>
+				<td>
+					<button type="button" onclick="next()">Iterate!</button> <br>
+					Or step by step <br>
+					<button type="button" onclick="deleteDominos()">Step 1: Delete</button>
+					<button type="button" onclick="slideDominos()">Step 2: Slide</button>
+					<button type="button" onclick="createDominos()">Step 3: Create</button>
+				</td>
+				<td>
+					<form action="">
+						<input id="radioButton1" type="radio" name="renderType" value="1" onclick="draw()" checked="checked"> Render 1 <br>
+						<input id="radioButton2" type="radio" name="renderType" value="2" onclick="draw()"> Render 2 <br>
+						Block size: <input id="textbox1" type="text" value="5">
+					</form>
+				</td>
+			</tr>
+		</table>
+		<br>
+		<canvas id="canvas1" width="800" height="600"></canvas>
+	</body>
+</html>
