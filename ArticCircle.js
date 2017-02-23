@@ -106,11 +106,63 @@ function slideDominos(){
 // Fill the empty spaces with dominos.
 function createDominos(){
 	iterationCounter++;
+
+	// More faster O(n^2)
+	// Initialize isEmpty
+	var isEmpty = [];
+	for(var x = 0; x <= 2 * iterationCounter + 2; x++){
+		isEmpty.push([]);
+		for(var y = 0; y <= 2 * iterationCounter + 2; y++){
+			isEmpty[x].push(false);
+		}
+	}
+	// Define aztec diamond cells
+	for(var x = -iterationCounter; x <= iterationCounter + 2; x++){
+		for(var y = -iterationCounter; y <= iterationCounter + 2; y++){
+			if(-iterationCounter <= x + y && x + y <= iterationCounter + 1 &&
+				-iterationCounter <= x - y && x - y <= iterationCounter + 1){
+				isEmpty[x + iterationCounter][y + iterationCounter] = true;
+			}
+		}
+	}
+	// Fill isEmpty with false where exist dominos
+	var n = dominos.length;
+	for(var i = 0; i < n; i++){
+		var domino = dominos[i];
+		switch(domino.direction){
+			case DIRECTION_NORTH:
+			case DIRECTION_SOUTH:
+				isEmpty[domino.x + iterationCounter][domino.y + iterationCounter] = false;
+				isEmpty[domino.x + iterationCounter + 1][domino.y + iterationCounter] = false;
+				break;
+			case DIRECTION_EAST:
+			case DIRECTION_WEST:
+				isEmpty[domino.x + iterationCounter][domino.y + iterationCounter] = false;
+				isEmpty[domino.x + iterationCounter][domino.y + iterationCounter + 1] = false;
+				break;
+		}
+	}
+	// Fill empty cell in auxmat with dominos
+	for(var x = -iterationCounter; x <= iterationCounter + 1; x++){
+		for(var y = -iterationCounter; y <= iterationCounter + 1; y++){
+			if(isEmpty[x + iterationCounter][y + iterationCounter]){
+				fill(x, y);
+				isEmpty[x + iterationCounter][y + iterationCounter] = false;
+				isEmpty[x + iterationCounter][y + iterationCounter + 1] = false;
+				isEmpty[x + iterationCounter + 1][y + iterationCounter] = false;
+				isEmpty[x + iterationCounter + 1][y + iterationCounter + 1] = false;
+			}
+		}
+	}
+
+	// More slower O(n^3)
+	/*
 	// For each position in Aztec Diamond,
 	for(var x = -iterationCounter; x <= iterationCounter + 1; x++){
 		for(var y = -iterationCounter; y <= iterationCounter + 1; y++){
 			if(-iterationCounter <= x + y && x + y <= iterationCounter + 1 &&
 				-iterationCounter <= x - y && x - y <= iterationCounter + 1){
+				
 				// Verify if is empty cell
 				var existDomino = false;
 				var n = dominos.length;
@@ -135,6 +187,27 @@ function createDominos(){
 				}
 			}
 		}
-	}
+	}*/
 	draw();
 }
+
+// Auto step button :D
+var autoStepCounter = 0;
+function autoStep(){
+	switch(autoStepCounter){
+		case 0:
+			deleteDominos();
+			document.getElementById("buttonAutostep").innerHTML = "AutoStep 2: Slide ";
+			break;
+		case 1:
+			slideDominos();
+			document.getElementById("buttonAutostep").innerHTML = "AutoStep 3: Create";
+			break;
+		case 2:
+			createDominos();
+			document.getElementById("buttonAutostep").innerHTML = "AutoStep 1: Delete";
+			break;
+	}
+	autoStepCounter = (autoStepCounter + 1) % 3;
+}
+
