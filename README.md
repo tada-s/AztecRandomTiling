@@ -1,4 +1,4 @@
-# A Random Tiling in Aztec Diamond in Javascript
+# A Random Tiling in Aztec Diamond with Javascript
 
 Random Tiling of Aztec Diamond by Tile Shuffling.
 
