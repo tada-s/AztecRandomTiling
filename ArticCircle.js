@@ -1,241 +1,172 @@
-var dominos = [];
-var iterationCounter = 0;
+class Vector {
+    static add(array1, array2) {
+        return Array.from(
+            { length: Math.max(array1.length, array2.length) },
+            (_, i) => array1[i] + array2[i]
+        );
+    }
 
-const EMPTY_CELL = 0;
-const DIRECTION_EAST = 1;
-const DIRECTION_WEST = 2;
-const DIRECTION_NORTH = 3;
-const DIRECTION_SOUTH = 4;
-
-function next(){
-	deleteDominos();
-	slideDominos();
-	createDominos();
-	draw();
+    static equals(array1, array2) {
+        let length = Math.max(array1.length, array2.length);
+        for (let i = 0; i < length; i++) {
+            if (array1[i] != array2[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
 
-function init(){
-	dominos = [];
-	iterationCounter = 0;
-	fill(0, 0);
-	draw();
+
+class Direction {
+    static EAST = [1, 0];
+    static WEST = [-1, 0];
+    static NORTH = [0, 1];
+    static SOUTH = [0, -1];
+
+    static opposite(direction) {
+        return {
+            [Direction.EAST]: Direction.WEST,
+            [Direction.WEST]: Direction.EAST,
+            [Direction.NORTH]: Direction.SOUTH,
+            [Direction.SOUTH]: Direction.NORTH,
+        }[direction];
+    }
 }
 
-// Fill randomly a 2x2 cell with dominos
-function fill(i, j){
-	var splitDirection = Math.round(Math.random());
-	if(splitDirection == 0){
-		// Vertical Split
-		dominos.push({
-			x: i,
-			y: j,
-			direction: DIRECTION_WEST
-		});
-		dominos.push({
-			x: i + 1,
-			y: j,
-			direction: DIRECTION_EAST
-		});
-	}else{
-		// Horizontal Split
-		dominos.push({
-			x: i,
-			y: j,
-			direction: DIRECTION_SOUTH
-		});
-		dominos.push({
-			x: i,
-			y: j + 1,
-			direction: DIRECTION_NORTH
-		});
-	}
+
+class Domino {
+    constructor(position, direction) {
+        this.position = position;
+        this.direction = direction;
+    }
+
+    static *getOccupiedCellPosition(domino) {
+        if (Vector.equals(domino.direction, Direction.EAST) || Vector.equals(domino.direction, Direction.WEST)) {
+            yield domino.position;
+            yield Vector.add(domino.position, Direction.SOUTH);
+        } else {
+            yield domino.position;
+            yield Vector.add(domino.position, Direction.WEST);
+        }
+    }
 }
 
-// Deletes the pairs of dominos with opposite directions (will collide).
-function deleteDominos(){
-	// O(n log n)
-	dominos.sort(function(a, b){
-		if(a.x != b.x) return a.x - b.x;
-		else return a.y - b.y;
-	});
-	for(var i = 0; i < dominos.length - 1; i++){
-		var domino1 = dominos[i];
-		var domino2 = dominos[i + 1];
-		if(domino1.direction == DIRECTION_NORTH && domino2.direction == DIRECTION_SOUTH && domino1.x == domino2.x && domino1.y + 1 == domino2.y){
-			dominos.splice(i, 2);
-			i--;
-		}
-	}
-	
-	dominos.sort(function(a, b){
-		if(a.y != b.y) return a.y - b.y;
-		else return a.x - b.x;
-	});
-	for(var i = 0; i < dominos.length - 1; i++){
-		var domino1 = dominos[i];
-		var domino2 = dominos[i + 1];
-		if(domino1.direction == DIRECTION_EAST && domino2.direction == DIRECTION_WEST && domino1.x + 1 == domino2.x && domino1.y == domino2.y){
-			dominos.splice(i, 2);
-			i--;
-		}
-	}
-	
-	// O(n^2)
-	/*var i = 0;
-	while(i < dominos.length){
-		var deleted = false;
-		for(var j = i + 1; j < dominos.length; j++){
-			var domino1 = dominos[i];
-			var domino2 = dominos[j];
-			if(domino2.direction == DIRECTION_WEST || domino2.direction == DIRECTION_NORTH){
-				domino1 = dominos[j];
-				domino2 = dominos[i];
-			}
-			if((domino1.direction == DIRECTION_WEST && domino2.direction == DIRECTION_EAST && domino1.x == domino2.x + 1 && domino1.y == domino2.y) ||
-				(domino1.direction == DIRECTION_NORTH && domino2.direction == DIRECTION_SOUTH && domino1.x == domino2.x && domino1.y + 1 == domino2.y) ){
-				// Remove dominos from the list
-				dominos.splice(j, 1);
-				dominos.splice(i, 1);
-				deleted = true;
-				break;
-			}
-		}
-		
-		if(!deleted){
-			i++;
-		}
-	}*/
-	draw();
+
+class AztecDiamond {
+    constructor() {
+        this.dominoesMap = new ArrayMap();
+        this.order = 0;
+    }
+
+    incrementOrder() {
+        this.order++;
+    }
+
+    moveDominoes() {
+        const dominoes = [...this.dominoesMap.values()];
+        for (const domino of dominoes) {
+            this.dominoesMap.delete(domino.position);
+        }
+        for (const domino of dominoes) {
+            domino.position = Vector.add(domino.position, domino.direction);
+        }
+        for (const domino of dominoes) {
+            this.dominoesMap.set(domino.position, domino);
+        }
+    }
+
+    deleteCollidingDominoes() {
+        for (const [domino1, domino2] of [...this.getCollidingDominoes()]) {
+            this.dominoesMap.delete(domino1.position);
+            this.dominoesMap.delete(domino2.position);
+        }
+    }
+
+    fillDominoes() {
+        for (const position of [...this.getEmptySquarePositions()]) {
+            if (Math.random() < 0.5) {
+                this.dominoesMap.set(position, new Domino(position, Direction.EAST));
+                const position2 = Vector.add(position, Direction.WEST);
+                this.dominoesMap.set(position2, new Domino(position2, Direction.WEST));
+            } else {
+                this.dominoesMap.set(position, new Domino(position, Direction.NORTH));
+                const position2 = Vector.add(position, Direction.SOUTH);
+                this.dominoesMap.set(position2, new Domino(position2, Direction.SOUTH));
+            }
+        }
+    }
+
+    *getCollidingDominoes() {
+        for (const domino1 of this.dominoesMap.values()) {
+            const domino2 = this.dominoesMap.get(Vector.add(domino1.position, domino1.direction));
+            if (domino2 && Vector.equals(domino2.direction, Direction.opposite(domino1.direction))) {
+                yield [domino1, domino2];
+            }
+        }
+    }
+
+    *getEmptySquarePositions() {
+        // Define a square region
+        const square = [
+            [0, 0],
+            [-1, 0],
+            [0, -1],
+            [-1, -1],
+        ];
+        function* getSquareCells(position) {
+            for (const squarePosition of square) {
+                yield Vector.add(position, squarePosition);
+            }
+        }
+
+        // Initialize interior cell state as 0 (empty)
+        const cellState = new ArrayMap();
+        for (const position of this.getInteriorCellPositions()) {
+            cellState.set(position, 0);
+        }
+
+        // Set 1 (occupied) if there is a domino on the cell
+        for (const domino of this.dominoesMap.values()) {
+            for (const position of Domino.getOccupiedCellPosition(domino)) {
+                cellState.set(position, 1);
+            }
+        }
+
+        // Test if can fit a square
+        function canFitSquare(position) {
+            for (const squarePosition of getSquareCells(position)) {
+                if (cellState.get(squarePosition) != 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        for (const position of this.getInteriorCellPositions()) {
+            if (canFitSquare(position)) {
+                // Yield position and occupy the position
+                yield position;
+                for (const squarePosition of getSquareCells(position)) {
+                    if (cellState.has(squarePosition)) {
+                        cellState.set(squarePosition, 1);
+                    }
+                }
+            }
+        }
+    }
+
+    *getInteriorCellPositions() {
+        for (let n = 1; n <= this.order; n++) {
+            const x = this.order - n;
+            for (let y = n - 1; y >= -n; y--) {
+                yield [x, y];
+            }
+        }
+        for (let n = this.order; n >= 1; n--) {
+            const x = n - this.order - 1;
+            for (let y = n - 1; y >= -n; y--) {
+                yield [x, y];
+            }
+        }
+    }
 }
-
-// Move the dominos according to their directions.
-function slideDominos(){
-	var n = dominos.length;
-	for(var i = 0; i < n; i++){
-		domino = dominos[i];
-		switch(domino.direction){
-			case DIRECTION_EAST:
-				domino.x++;
-				break;
-			case DIRECTION_WEST:
-				domino.x--;
-				break;
-			case DIRECTION_NORTH:
-				domino.y++;
-				break;
-			case DIRECTION_SOUTH:
-				domino.y--;
-				break;
-		}
-	}
-	draw();
-}
-
-// Fill the empty spaces with dominos.
-function createDominos(){
-	iterationCounter++;
-
-	// O(n^2)
-	// Initialize isEmpty
-	var isEmpty = [];
-	for(var x = 0; x <= 2 * iterationCounter + 2; x++){
-		isEmpty.push([]);
-		for(var y = 0; y <= 2 * iterationCounter + 2; y++){
-			isEmpty[x].push(false);
-		}
-	}
-	// Define aztec diamond cells
-	for(var x = -iterationCounter; x <= iterationCounter + 2; x++){
-		for(var y = -iterationCounter; y <= iterationCounter + 2; y++){
-			if(-iterationCounter <= x + y && x + y <= iterationCounter + 1 &&
-				-iterationCounter <= x - y && x - y <= iterationCounter + 1){
-				isEmpty[x + iterationCounter][y + iterationCounter] = true;
-			}
-		}
-	}
-	// Fill isEmpty with false where exist dominos
-	var n = dominos.length;
-	for(var i = 0; i < n; i++){
-		var domino = dominos[i];
-		switch(domino.direction){
-			case DIRECTION_NORTH:
-			case DIRECTION_SOUTH:
-				isEmpty[domino.x + iterationCounter][domino.y + iterationCounter] = false;
-				isEmpty[domino.x + iterationCounter + 1][domino.y + iterationCounter] = false;
-				break;
-			case DIRECTION_EAST:
-			case DIRECTION_WEST:
-				isEmpty[domino.x + iterationCounter][domino.y + iterationCounter] = false;
-				isEmpty[domino.x + iterationCounter][domino.y + iterationCounter + 1] = false;
-				break;
-		}
-	}
-	// Fill empty cell in auxmat with dominos
-	for(var x = -iterationCounter; x <= iterationCounter + 1; x++){
-		for(var y = -iterationCounter; y <= iterationCounter + 1; y++){
-			if(isEmpty[x + iterationCounter][y + iterationCounter]){
-				fill(x, y);
-				isEmpty[x + iterationCounter][y + iterationCounter] = false;
-				isEmpty[x + iterationCounter][y + iterationCounter + 1] = false;
-				isEmpty[x + iterationCounter + 1][y + iterationCounter] = false;
-				isEmpty[x + iterationCounter + 1][y + iterationCounter + 1] = false;
-			}
-		}
-	}
-
-	// O(n^3)
-	/*
-	// For each position in Aztec Diamond,
-	for(var x = -iterationCounter; x <= iterationCounter + 1; x++){
-		for(var y = -iterationCounter; y <= iterationCounter + 1; y++){
-			if(-iterationCounter <= x + y && x + y <= iterationCounter + 1 &&
-				-iterationCounter <= x - y && x - y <= iterationCounter + 1){
-				
-				// Verify if is empty cell
-				var existDomino = false;
-				var n = dominos.length;
-				for(var i = 0; i < n; i++){
-					var domino = dominos[i];
-					if(domino.direction == DIRECTION_NORTH || domino.direction == DIRECTION_SOUTH){
-						if((x == domino.x || x == domino.x + 1) && y == domino.y){
-							existDomino = true;
-							break;
-						}
-					}else{
-						if(x == domino.x && (y == domino.y || y == domino.y + 1)){
-							existDomino = true;
-							break;
-						}
-					}
-				}
-				
-				// If is an empty cell, fill randomly with dominos.
-				if(!existDomino){
-					fill(x, y);
-				}
-			}
-		}
-	}*/
-	draw();
-}
-
-// Auto step button :D
-var autoStepCounter = 0;
-function autoStep(){
-	switch(autoStepCounter){
-		case 0:
-			deleteDominos();
-			document.getElementById("buttonAutostep").innerHTML = "AutoStep 2: Slide ";
-			break;
-		case 1:
-			slideDominos();
-			document.getElementById("buttonAutostep").innerHTML = "AutoStep 3: Create";
-			break;
-		case 2:
-			createDominos();
-			document.getElementById("buttonAutostep").innerHTML = "AutoStep 1: Delete";
-			break;
-	}
-	autoStepCounter = (autoStepCounter + 1) % 3;
-}
-
